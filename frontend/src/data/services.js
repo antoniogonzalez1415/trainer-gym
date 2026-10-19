@@ -1,0 +1,94 @@
+// Temporary sample data.
+// On day 2 these same fields move into MongoDB and this file is replaced by API calls.
+// All coach names are invented.
+
+export const services = [
+  {
+    id: 'strength-foundations',
+    name: 'Strength Foundations',
+    category: 'Strength',
+    durationMinutes: 60,
+    price: 55,
+    level: 'Beginner',
+    coach: 'Maya Ortiz',
+    summary: 'Learn the big lifts with a coach watching every rep.',
+    description:
+      'A one-on-one session built around the squat, hinge, push and pull. Your coach sets loads you can handle with good form and writes down what to progress next time.',
+    includes: ['Movement check', 'Personal load targets', 'Written plan for next session'],
+    keywords: ['strength', 'strong', 'stronger', 'muscle', 'lift', 'lifting', 'weights', 'tone', 'beginner'],
+  },
+  {
+    id: 'hiit-conditioning',
+    name: 'HIIT Conditioning',
+    category: 'Cardio',
+    durationMinutes: 45,
+    price: 45,
+    level: 'Intermediate',
+    coach: 'Daniel Reyes',
+    summary: 'Short, hard intervals to build stamina and burn energy.',
+    description:
+      'Bike, rower and bodyweight intervals paced to your heart rate. Good for building endurance when you only have 45 minutes.',
+    includes: ['Heart-rate zones', 'Interval plan', 'Cool-down routine'],
+    keywords: ['cardio', 'stamina', 'endurance', 'fat', 'weight', 'lose', 'burn', 'hiit', 'interval', 'fit'],
+  },
+  {
+    id: 'mobility-stretch',
+    name: 'Mobility and Stretch',
+    category: 'Mobility',
+    durationMinutes: 45,
+    price: 40,
+    level: 'All levels',
+    coach: 'Lena Brooks',
+    summary: 'Move more freely through hips, shoulders and back.',
+    description:
+      'Guided mobility drills and assisted stretching for people who sit a lot or feel stiff after training. Not a substitute for physical therapy.',
+    includes: ['Range-of-motion check', 'Assisted stretching', 'Daily 10-minute routine'],
+    keywords: ['mobility', 'stiff', 'stretch', 'flexible', 'flexibility', 'posture', 'desk', 'sitting', 'back', 'hips'],
+  },
+  {
+    id: 'yoga-flow',
+    name: 'Yoga Flow',
+    category: 'Flexibility',
+    durationMinutes: 60,
+    price: 40,
+    level: 'All levels',
+    coach: 'Priya Nair',
+    summary: 'Breath-led yoga to build balance and calm.',
+    description:
+      'A private vinyasa-style class adapted to your level. Expect balance work, controlled breathing and a slow finish.',
+    includes: ['Pose adjustments', 'Breathing practice', 'Short home sequence'],
+    keywords: ['yoga', 'relax', 'stress', 'calm', 'balance', 'breathing', 'flexibility', 'mind'],
+  },
+  {
+    id: 'run-prep',
+    name: 'Run Prep Coaching',
+    category: 'Running',
+    durationMinutes: 60,
+    price: 50,
+    level: 'Intermediate',
+    coach: 'Daniel Reyes',
+    summary: 'Get ready for your first 5K, 10K or half marathon.',
+    description:
+      'Treadmill gait review, pacing practice and a week-by-week plan toward your race date.',
+    includes: ['Gait review', 'Pace targets', 'Race-week plan'],
+    keywords: ['run', 'running', 'race', '5k', '10k', 'marathon', 'jog', 'pace', 'endurance'],
+  },
+  {
+    id: 'fitness-assessment',
+    name: 'Fitness Assessment',
+    category: 'Assessment',
+    durationMinutes: 30,
+    price: 25,
+    level: 'All levels',
+    coach: 'Maya Ortiz',
+    summary: 'A starting point: where you are now and what to train first.',
+    description:
+      'Basic strength, cardio and mobility tests with a short conversation about your goals. Ideal before booking a regular session.',
+    includes: ['Baseline tests', 'Goal conversation', 'Suggested first sessions'],
+    keywords: ['start', 'new', 'beginner', 'assessment', 'test', 'where', 'begin', 'unsure', 'goal'],
+  },
+]
+
+export function getServiceById(id) {
+  return services.find((service) => service.id === id)
+}
