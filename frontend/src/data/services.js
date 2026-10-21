@@ -23,7 +23,7 @@ export const services = [
     category: 'Cardio',
     durationMinutes: 45,
     price: 45,
-    level: 'Intermediate',
+    level: 'Advanced',
     coach: 'Daniel Reyes',
     summary: 'Short, hard intervals to build stamina and burn energy.',
     description:
@@ -37,7 +37,7 @@ export const services = [
     category: 'Mobility',
     durationMinutes: 45,
     price: 40,
-    level: 'All levels',
+    level: 'Beginner',
     coach: 'Lena Brooks',
     summary: 'Move more freely through hips, shoulders and back.',
     description:
@@ -51,7 +51,7 @@ export const services = [
     category: 'Flexibility',
     durationMinutes: 60,
     price: 40,
-    level: 'All levels',
+    level: 'Beginner',
     coach: 'Priya Nair',
     summary: 'Breath-led yoga to build balance and calm.',
     description:
@@ -79,7 +79,7 @@ export const services = [
     category: 'Assessment',
     durationMinutes: 30,
     price: 25,
-    level: 'All levels',
+    level: 'Beginner',
     coach: 'Maya Ortiz',
     summary: 'A starting point: where you are now and what to train first.',
     description:

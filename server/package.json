@@ -10,7 +10,9 @@
   },
   "scripts": {
     "dev": "node --watch --env-file=.env src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "seed": "node --env-file=.env scripts/seedServices.js",
+    "check:models": "node scripts/checkModels.js"
   },
   "dependencies": {
     "cors": "^2.8.6",
