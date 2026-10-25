@@ -22,6 +22,7 @@ const bookingSchema = new mongoose.Schema(
     },
 
     // Copy of the service at booking time
+    serviceSlug: { type: String, required: true, trim: true },
     serviceName: { type: String, required: true, trim: true },
     coach: { type: String, required: true, trim: true },
     durationMinutes: { type: Number, required: true, min: 15, max: 180 },

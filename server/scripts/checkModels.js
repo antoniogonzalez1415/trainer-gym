@@ -13,6 +13,7 @@ const start = new Date('2030-01-15T15:00:00.000Z')
 const validBooking = {
   user: new mongoose.Types.ObjectId(),
   service: new mongoose.Types.ObjectId(),
+  serviceSlug: 'yoga-flow',
   serviceName: 'Yoga Flow',
   coach: 'Priya Nair',
   durationMinutes: 60,
