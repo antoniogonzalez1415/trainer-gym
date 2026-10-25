@@ -1,109 +1,122 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
+import { apiRequest, errorText } from '../api/client.js'
+import { ErrorMessage, Loading } from '../components/LoadState.jsx'
+import ServiceImage from '../components/ServiceImage.jsx'
 import TimeFields from '../components/TimeFields.jsx'
-import { useAuth } from '../context/AuthContext.jsx'
-import { useBookings } from '../context/BookingsContext.jsx'
-import { getServiceById } from '../data/services.js'
+import { useApi } from '../hooks/useApi.js'
 import { isInFuture, toIsoString } from '../utils/dates.js'
+import { SessionNotFound } from './ServiceDetail.jsx'
 
 const NOTES_MAX_LENGTH = 200
 
 export default function BookService() {
   const { id } = useParams()
-  const service = getServiceById(id)
-  const { user } = useAuth()
-  const { createBooking } = useBookings()
   const navigate = useNavigate()
+  const {
+    data: service,
+    loading,
+    error: loadError,
+    reload,
+  } = useApi(`/services/${encodeURIComponent(id)}`)
 
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  if (!service) {
-    return (
-      <section className="section container narrow">
-        <h1>Session not found</h1>
-        <p>Choose a session from the list to book it.</p>
-        <Link to="/services" className="button button-primary">
-          Browse sessions
-        </Link>
-      </section>
-    )
-  }
+  if (loadError?.status === 404) return <SessionNotFound />
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
+    if (submitting) return
 
+    // Quick checks for a better experience; the backend repeats all of them
     if (!date || !time) {
       setError('Choose a date and a start time.')
       return
     }
-
     const startsAt = toIsoString(date, time)
     if (!isInFuture(startsAt)) {
       setError('That time has already passed. Choose a later time.')
       return
     }
 
-    const bookingError = createBooking({
-      service,
-      userEmail: user.email,
-      startsAt,
-      notes: notes.trim(),
-    })
-
-    if (bookingError) {
-      setError(bookingError)
-      return
+    setSubmitting(true)
+    setError('')
+    try {
+      // Only the fields the customer controls. The server adds user, price and status.
+      await apiRequest('/bookings', {
+        method: 'POST',
+        body: { serviceId: service.id, startsAt, notes: notes.trim() },
+      })
+      navigate('/dashboard', { state: { booked: service.name } })
+    } catch (requestError) {
+      setError(errorText(requestError))
+      setSubmitting(false)
     }
-
-    navigate('/dashboard', { state: { booked: service.name } })
   }
 
   return (
     <section className="section container narrow">
-      <Link to={`/services/${service.id}`} className="back-link">
-        Back to {service.name}
-      </Link>
-      <h1>Book {service.name}</h1>
-      <p className="lead">
-        {service.durationMinutes} minutes with {service.coach}, ${service.price}. Pay at the
-        studio.
-      </p>
+      {loading && <Loading label="Loading session…" />}
+      {loadError && <ErrorMessage error={loadError} onRetry={reload} />}
 
-      <form className="form" onSubmit={handleSubmit} noValidate>
-        <TimeFields
-          idPrefix="book"
-          date={date}
-          time={time}
-          onDateChange={setDate}
-          onTimeChange={setTime}
-        />
+      {service && (
+        <>
+          <Link to={`/services/${service.id}`} className="back-link">
+            Back to {service.name}
+          </Link>
+          <div className="book-header">
+            <ServiceImage service={service} className="book-thumb" />
+            <div>
+              <h1>Book {service.name}</h1>
+              <p className="lead">
+                {service.durationMinutes} minutes with {service.coach}, ${service.price}. Pay at the
+                studio. Times are Chicago time.
+              </p>
+            </div>
+          </div>
 
-        <div className="field">
-          <label htmlFor="book-notes">Notes for your coach (optional)</label>
-          <textarea
-            id="book-notes"
-            rows="3"
-            maxLength={NOTES_MAX_LENGTH}
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            placeholder="Anything your coach should know before the session"
-          />
-          <p className="field-hint">
-            {notes.length}/{NOTES_MAX_LENGTH}
-          </p>
-        </div>
+          <form className="form" onSubmit={handleSubmit} noValidate>
+            <TimeFields
+              idPrefix="book"
+              date={date}
+              time={time}
+              onDateChange={setDate}
+              onTimeChange={setTime}
+            />
 
-        <p className="form-error" role="alert">
-          {error}
-        </p>
+            <div className="field">
+              <label htmlFor="book-notes">Notes for your coach (optional)</label>
+              <textarea
+                id="book-notes"
+                rows="3"
+                maxLength={NOTES_MAX_LENGTH}
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder="Anything your coach should know before the session"
+              />
+              <p className="field-hint">
+                {notes.length}/{NOTES_MAX_LENGTH}
+              </p>
+            </div>
 
-        <button type="submit" className="button button-primary button-block">
-          Confirm booking
-        </button>
-      </form>
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+
+            <button
+              type="submit"
+              className="button button-primary button-block"
+              disabled={submitting}
+            >
+              {submitting ? 'Booking…' : 'Confirm booking'}
+            </button>
+          </form>
+        </>
+      )}
     </section>
   )
 }

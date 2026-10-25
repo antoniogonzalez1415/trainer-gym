@@ -1,44 +1,54 @@
 import { useState } from 'react'
+import { ErrorMessage, Loading } from '../components/LoadState.jsx'
 import ServiceCard from '../components/ServiceCard.jsx'
-import { services } from '../data/services.js'
+import { useApi } from '../hooks/useApi.js'
+import { CATEGORIES, plateClass } from '../utils/categories.js'
 
 const ALL = 'All'
 
 export default function Services() {
   const [category, setCategory] = useState(ALL)
-  const categories = [ALL, ...new Set(services.map((service) => service.category))]
-
-  const visible =
-    category === ALL ? services : services.filter((service) => service.category === category)
+  const path = category === ALL ? '/services' : `/services?category=${encodeURIComponent(category)}`
+  const { data: services, loading, error, reload } = useApi(path)
 
   return (
-    <section className="section container">
-      <h1>Sessions</h1>
-      <p className="lead">Every session is one-on-one with a coach. Pick a category to narrow the list.</p>
+    <>
+      <section className="page-band">
+        <div className="container">
+          <h1>Sessions</h1>
+          <p>Every session is one-on-one with a coach. The color shows the type of training.</p>
+        </div>
+      </section>
 
-      <div className="filters" role="group" aria-label="Filter by category">
-        {categories.map((name) => (
-          <button
-            key={name}
-            type="button"
-            className={name === category ? 'chip chip-active' : 'chip'}
-            aria-pressed={name === category}
-            onClick={() => setCategory(name)}
-          >
-            {name}
-          </button>
-        ))}
-      </div>
-
-      {visible.length === 0 ? (
-        <p className="empty">No sessions in this category yet.</p>
-      ) : (
-        <div className="service-grid">
-          {visible.map((service) => (
-            <ServiceCard key={service.id} service={service} />
+      <section className="section container">
+        <div className="filters" role="group" aria-label="Filter by category">
+          {[ALL, ...CATEGORIES].map((name) => (
+            <button
+              key={name}
+              type="button"
+              className={`chip ${name === ALL ? '' : plateClass(name)} ${name === category ? 'chip-active' : ''}`}
+              aria-pressed={name === category}
+              onClick={() => setCategory(name)}
+            >
+              {name !== ALL && <span className="plate-dot" aria-hidden="true" />}
+              {name}
+            </button>
           ))}
         </div>
-      )}
-    </section>
+
+        {loading && <Loading label="Loading sessions…" />}
+        {error && <ErrorMessage error={error} onRetry={reload} />}
+        {services && services.length === 0 && (
+          <p className="empty">No sessions in this category yet. Try another type.</p>
+        )}
+        {services && services.length > 0 && (
+          <div className="service-grid">
+            {services.map((service) => (
+              <ServiceCard key={service.id} service={service} />
+            ))}
+          </div>
+        )}
+      </section>
+    </>
   )
 }

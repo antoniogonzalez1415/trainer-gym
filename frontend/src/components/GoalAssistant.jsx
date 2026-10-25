@@ -1,29 +1,50 @@
 // The "coach's board": the visitor writes a goal and gets up to three sessions.
-// Today it uses keyword matching. On day 4 it calls POST /api/ai/recommend-service.
+// Calls POST /api/ai/recommend-service. The backend asks the AI provider,
+// checks every suggestion against real sessions, and falls back to keyword
+// matching if the AI is unavailable. Suggestions never book anything.
 
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { getServiceById } from '../data/services.js'
-import { GOAL_MAX_LENGTH, recommendByKeywords } from '../utils/recommend.js'
+import { apiRequest, errorText } from '../api/client.js'
+
+const GOAL_MIN_LENGTH = 5
+const GOAL_MAX_LENGTH = 300
 
 export default function GoalAssistant() {
   const [goal, setGoal] = useState('')
-  const [results, setResults] = useState(null)
+  const [status, setStatus] = useState('idle')
+  const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+
+  async function requestSuggestions() {
+    setStatus('loading')
+    setError('')
+    try {
+      const data = await apiRequest('/ai/recommend-service', {
+        method: 'POST',
+        body: { goal: goal.trim() },
+      })
+      setResult(data)
+      setStatus('done')
+    } catch (requestError) {
+      setError(errorText(requestError))
+      setResult(null)
+      setStatus('error')
+    }
+  }
 
   function handleSubmit(event) {
     event.preventDefault()
-    const trimmed = goal.trim()
-
-    if (trimmed.length < 5) {
+    if (goal.trim().length < GOAL_MIN_LENGTH) {
       setError('Write a few words about your goal, for example "get stronger for hiking".')
-      setResults(null)
+      setResult(null)
+      setStatus('error')
       return
     }
-
-    setError('')
-    setResults(recommendByKeywords(trimmed))
+    requestSuggestions()
   }
+
+  const loading = status === 'loading'
 
   return (
     <section className="board" aria-labelledby="board-title">
@@ -42,51 +63,68 @@ export default function GoalAssistant() {
           value={goal}
           onChange={(event) => setGoal(event.target.value)}
           placeholder="I sit at a desk all day and want to feel less stiff"
-          aria-describedby="goal-count goal-error"
+          aria-describedby="goal-count goal-help goal-error"
         />
+        <p id="goal-help" className="board-help">
+          Describe your goal, not personal or medical details.
+        </p>
         <div className="board-actions">
           <span id="goal-count" className="muted">
             {goal.length}/{GOAL_MAX_LENGTH}
           </span>
-          <button type="submit" className="button button-primary">
-            Suggest sessions
+          <button type="submit" className="button button-primary" disabled={loading}>
+            {loading ? 'Thinking…' : 'Suggest sessions'}
           </button>
         </div>
-        <p id="goal-error" className="form-error" role="alert">
-          {error}
-        </p>
+        <div id="goal-error" className="form-error" role="alert">
+          {status === 'error' && error && (
+            <>
+              {error}{' '}
+              {goal.trim().length >= GOAL_MIN_LENGTH && (
+                <button type="button" className="link-button" onClick={requestSuggestions}>
+                  Try again
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </form>
 
-      {results && (
-        <div className="board-results" aria-live="polite">
-          {results.length === 0 ? (
-            <p>
-              No session matches that goal yet. Try describing it differently, or start with a{' '}
-              <Link to="/services/fitness-assessment">Fitness Assessment</Link>.
+      <div aria-live="polite">
+        {loading && <p className="muted">Finding sessions that fit your goal…</p>}
+
+        {status === 'done' && result && (
+          <div className="board-results">
+            <p className="board-summary">
+              {result.summary}{' '}
+              <span className="source-tag">
+                {result.source === 'ai' ? 'Suggested by AI' : 'Matched by keywords'}
+              </span>
             </p>
-          ) : (
-            <ol className="suggestions">
-              {results.map((result) => {
-                const service = getServiceById(result.serviceId)
-                return (
-                  <li key={result.serviceId}>
-                    <Link to={`/services/${service.id}`}>{service.name}</Link>
+
+            {result.recommendations.length === 0 ? (
+              <p>
+                Try describing it differently, or start with a{' '}
+                <Link to="/services/fitness-assessment">Fitness Assessment</Link>.
+              </p>
+            ) : (
+              <ol className="suggestions">
+                {result.recommendations.map((recommendation) => (
+                  <li key={recommendation.serviceId}>
+                    <Link to={`/services/${recommendation.serviceId}`}>{recommendation.name}</Link>
                     <span className="muted">
                       {' '}
-                      {service.durationMinutes} min, ${service.price}
+                      {recommendation.durationMinutes} min, ${recommendation.price}
                     </span>
-                    <p>{result.reason}</p>
+                    <p>{recommendation.reason}</p>
                   </li>
-                )
-              })}
-            </ol>
-          )}
-          <p className="board-note">
-            Suggestions are a starting point. Check the session details before booking, and talk
-            to a doctor first if you have an injury or health condition.
-          </p>
-        </div>
-      )}
+                ))}
+              </ol>
+            )}
+            <p className="board-note">{result.disclaimer}</p>
+          </div>
+        )}
+      </div>
     </section>
   )
 }

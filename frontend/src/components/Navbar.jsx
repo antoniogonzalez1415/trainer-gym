@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router'
 import { useAuth } from '../context/AuthContext.jsx'
+import BrandMark from './BrandMark.jsx'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
@@ -14,7 +15,7 @@ export default function Navbar() {
     <header className="navbar">
       <div className="container navbar-inner">
         <Link to="/" className="brand" aria-label="Fit Trainer home">
-          <span className="brand-mark" aria-hidden="true">F</span>
+          <BrandMark />
           Fit Trainer
         </Link>
 
@@ -23,7 +24,7 @@ export default function Navbar() {
           {user ? (
             <>
               <NavLink to="/dashboard">My bookings</NavLink>
-              <button type="button" className="button button-ghost" onClick={handleLogout}>
+              <button type="button" className="button button-on-dark" onClick={handleLogout}>
                 Log out
               </button>
             </>

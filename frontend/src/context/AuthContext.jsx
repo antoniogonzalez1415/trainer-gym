@@ -1,58 +1,66 @@
 // Keeps track of who is logged in so any page can read it.
-// TEMPORARY: login and register only check the form here.
-// On day 4 they call the backend (POST /api/auth/login and /api/auth/register),
-// which checks the password against MongoDB.
+// The backend checks the password and returns a token; the token is kept in
+// localStorage and sent with every request. Logging out deletes it.
+// Note: hiding a page in React only improves the experience; the backend
+// is what actually protects the data.
 
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { apiRequest, getToken, setToken, setUnauthorizedHandler } from '../api/client.js'
 
 const AuthContext = createContext(null)
-const STORAGE_KEY = 'fit-trainer-user'
-
-function readStoredUser() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    return saved ? JSON.parse(saved) : null
-  } catch {
-    return null
-  }
-}
-
-function storeUser(user) {
-  try {
-    if (user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
-    } else {
-      localStorage.removeItem(STORAGE_KEY)
-    }
-  } catch {
-    // Storage can be blocked (private windows). The app still works for this visit.
-  }
-}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(readStoredUser)
+  // "loading" while we check a saved token with the backend
+  const [auth, setAuth] = useState(() => ({
+    status: getToken() ? 'loading' : 'ready',
+    user: null,
+  }))
 
-  function saveUser(nextUser) {
-    setUser(nextUser)
-    storeUser(nextUser)
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setToken(null)
+      setAuth({ status: 'ready', user: null })
+    })
+
+    if (!getToken()) return undefined
+
+    const controller = new AbortController()
+    apiRequest('/auth/me', { signal: controller.signal })
+      .then((data) => setAuth({ status: 'ready', user: data.user }))
+      .catch((error) => {
+        if (error.name === 'AbortError') return
+        if (error.status === 401) setToken(null)
+        setAuth({ status: 'ready', user: null })
+      })
+
+    return () => controller.abort()
+  }, [])
+
+  function startSession(data) {
+    setToken(data.token)
+    setAuth({ status: 'ready', user: data.user })
   }
 
-  function login(email) {
-    const normalizedEmail = email.trim().toLowerCase()
-    const name = normalizedEmail.split('@')[0]
-    saveUser({ name, email: normalizedEmail })
+  async function login(email, password) {
+    const data = await apiRequest('/auth/login', { method: 'POST', body: { email, password } })
+    startSession(data)
   }
 
-  function register(name, email) {
-    saveUser({ name: name.trim(), email: email.trim().toLowerCase() })
+  async function register(name, email, password) {
+    const data = await apiRequest('/auth/register', {
+      method: 'POST',
+      body: { name, email, password },
+    })
+    startSession(data)
   }
 
   function logout() {
-    saveUser(null)
+    setToken(null)
+    setAuth({ status: 'ready', user: null })
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider value={{ ...auth, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )
