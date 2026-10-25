@@ -9,15 +9,19 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "node --watch --env-file=.env src/server.js",
+        "dev": "node --watch-path=./src --env-file=.env src/server.js",
     "start": "node src/server.js",
     "seed": "node --env-file=.env scripts/seedServices.js",
-    "check:models": "node scripts/checkModels.js"
+    "check:models": "node scripts/checkModels.js",
+    "test:api": "node scripts/smokeTest.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
     "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.11.3"
   }
 }
