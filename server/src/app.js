@@ -7,9 +7,17 @@ import helmet from 'helmet'
 import { env } from './config/env.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { notFound } from './middleware/notFound.js'
+import aiRoutes from './routes/aiRoutes.js'
+import authRoutes from './routes/authRoutes.js'
+import bookingRoutes from './routes/bookingRoutes.js'
 import healthRoutes from './routes/healthRoutes.js'
+import serviceRoutes from './routes/serviceRoutes.js'
 
 const app = express()
+
+// Hosting platforms like Render sit behind one proxy. This lets rate limits
+// see the visitor's real IP address instead of the proxy's.
+app.set('trust proxy', 1)
 
 // Safe default HTTP headers (also hides the "X-Powered-By: Express" header)
 app.use(helmet())
@@ -22,6 +30,10 @@ app.use(express.json({ limit: '10kb' }))
 
 // Routes
 app.use('/api/health', healthRoutes)
+app.use('/api/services', serviceRoutes)
+app.use('/api/auth', authRoutes)
+app.use('/api/bookings', bookingRoutes)
+app.use('/api/ai', aiRoutes)
 
 // Must be last: unknown routes, then errors
 app.use(notFound)
