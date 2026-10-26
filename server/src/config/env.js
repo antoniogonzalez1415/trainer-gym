@@ -39,7 +39,7 @@ export const env = {
     model: process.env.AI_MODEL ?? 'gemini-3.5-flash-lite',
     // Optional: without a key, the assistant uses keyword matching only
     apiKey: process.env.AI_API_KEY ?? '',
-    timeoutMs: 8000,
+        timeoutMs: Number(process.env.AI_TIMEOUT_MS) || 15000,
   },
 }
 
